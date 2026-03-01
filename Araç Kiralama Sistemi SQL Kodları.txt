@@ -1,0 +1,719 @@
+CREATE TABLE COMPANY (
+  c_id   NUMBER         PRIMARY KEY,
+  c_name       VARCHAR(20)  NOT NULL,
+  c_tel        VARCHAR(20),
+  c_mail       VARCHAR(30),
+  c_fDate      DATE,
+  c_address    VARCHAR(50)
+);
+
+CREATE TABLE CATEGORY(
+    cat_id NUMBER PRIMARY KEY,
+    cat_name VARCHAR(20)
+);
+
+CREATE TABLE ADDRESSES(
+a_id NUMBER PRIMARY KEY,
+a_zipcode NUMBER,
+a_city VARCHAR(50),
+a_district VARCHAR(50)
+);
+
+CREATE TABLE BRANCH (
+  b_id    NUMBER         PRIMARY KEY,
+  b_name       VARCHAR(30)  NOT NULL,
+  b_address    VARCHAR(50),
+  b_tel        VARCHAR(20),
+  b_mail      VARCHAR(30),
+  b_fDate      DATE,
+  c_id   NUMBER         NOT NULL,
+  FOREIGN KEY(c_id) REFERENCES COMPANY(c_id)
+);
+
+CREATE TABLE CAR(
+    car_lno VARCHAR(20) PRIMARY KEY,
+    car_km NUMBER,
+    car_available VARCHAR(20),
+    car_year NUMBER(4),
+    car_dRate NUMBER,
+    car_color VARCHAR(10) NOT NULL,
+    car_brand VARCHAR(20) NOT NULL,
+    car_model VARCHAR(20) NOT NULL,
+    cat_id NUMBER,
+    b_id NUMBER NOT NULL,
+    FOREIGN KEY(cat_id) REFERENCES category(cat_id),
+    FOREIGN KEY(b_id) REFERENCES BRANCH(b_id)
+);
+
+CREATE TABLE CUSTOMER (
+    cust_id NUMBER PRIMARY KEY,
+    cust_fname VARCHAR(20) NOT NULL,
+    cust_lname VARCHAR(20)NOT NULL,
+    cust_mail VARCHAR(35) UNIQUE NOT NULL,
+    cust_tel VARCHAR(20),
+    cust_bday DATE,
+    cust_licence NUMBER NOT NULL,
+    cust_password VARCHAR(50) NOT NULL,
+    a_id NUMBER,
+    FOREIGN KEY(a_id) REFERENCES ADDRESSES(a_id)
+);
+
+CREATE TABLE RENT(
+    r_id NUMBER PRIMARY KEY,
+    r_totalPrice NUMBER,
+    r_eDate DATE,
+    r_sDate DATE,
+    car_lno VARCHAR(20),
+    cust_id NUMBER,
+    r_confirm VARCHAR(20),
+    r_deposit NUMBER,
+    FOREIGN KEY(car_lno) REFERENCES CAR(car_lno),
+    FOREIGN KEY(cust_id) REFERENCES CUSTOMER(cust_id)
+);
+
+CREATE OR REPLACE TRIGGER trg_depositAndTotalPriceCalculation
+BEFORE INSERT ON rent
+FOR EACH ROW
+DECLARE
+    t_dRate NUMBER;
+    t_days NUMBER;
+BEGIN
+    SELECT car_dRate INTO t_drate
+    FROM CAR
+    WHERE car_lno = :NEW.car_lno;
+    t_days := GREATEST(:NEW.r_eDate - :NEW.r_sDate, 1);
+    :NEW.r_totalPrice := t_days * t_dRate;
+
+    :NEW.r_deposit := :NEW.r_totalPrice * 0.10;
+END;
+
+INSERT INTO COMPANY (c_id, c_name, c_tel, c_mail, c_fDate, c_address)
+VALUES (235711, 'MyWishRent A Car', '0539720357', 'info@mywishrent.com', DATE '2019-05-13', 'İstanbul, Fatih, Atatürk Bulvarı 78');
+
+-- Balıkesir şubesi
+INSERT INTO BRANCH (b_id, b_name, b_address, b_tel, b_mail, b_fDate, c_id)
+VALUES (101010, 'MyWish Balıkesir', 'Balıkesir, Bandırma, Atatürk Cad. No:12', '02662223344', 'balikesir@mywishrent.com', DATE '2020-09-17', 235711);
+
+-- İstanbul şubeleri
+INSERT INTO BRANCH (b_id, b_name, b_address, b_tel, b_mail, b_fDate, c_id)
+VALUES (343434, 'MyWish İstanbul Avrupa', 'İstanbul, Fatih, Atatürk Bulv. No:78', '02125556677', 'istanbulavrupa@mywishrent.com', DATE '2019-05-13', 235711);
+
+INSERT INTO BRANCH (b_id, b_name, b_address, b_tel, b_mail, b_fDate, c_id)
+VALUES (828282, 'MyWish İstanbul Anadolu', 'İstanbul, Kadıköy, Bağdat Cad. No:45', '02126667788', 'istanbulanadolu@mywishrent.com', DATE '2019-05-13', 235711);
+
+-- Ankara şubesi
+INSERT INTO BRANCH (b_id, b_name, b_address, b_tel, b_mail, b_fDate, c_id)
+VALUES (606060, 'MyWish Ankara', 'Ankara, Çankaya, Kızılay Mah. No:14', '03124445566', 'ankara@mywishrent.com', DATE '2020-06-06', 235711);
+
+-- Batman şubesi
+INSERT INTO BRANCH (b_id, b_name, b_address, b_tel, b_mail, b_fDate, c_id)
+VALUES (727272, 'MyWish Batman', 'Batman, Merkez, Turgut Özal Cad. No:19', '04882113344', 'batman@mywishrent.com', DATE '2021-01-20', 235711);
+
+--KATEGORİ
+INSERT INTO CATEGORY (cat_id, cat_name)
+VALUES (1, 'SUV');
+INSERT INTO CATEGORY (cat_id, cat_name)
+VALUES (2, 'Standart');
+INSERT INTO CATEGORY (cat_id, cat_name)
+VALUES (3, 'Elektrikli');
+INSERT INTO CATEGORY (cat_id, cat_name)
+VALUES (4, 'Ekonomik');
+INSERT INTO CATEGORY (cat_id, cat_name)
+VALUES (5, 'Lüks');
+
+-- Balıkesir Şubesi (101010)
+INSERT INTO CAR VALUES ('10BL001', 25000, 'Evet', 2021, 700, 'Beyaz', 'Toyota', 'Corolla', 2, 101010);
+INSERT INTO CAR VALUES ('10BL002', 19000, 'Evet', 2022, 800, 'Gri', 'Renault', 'Clio', 2, 101010);
+INSERT INTO CAR VALUES ('10BL003', 42000, 'Hayır', 2020, 650, 'Siyah', 'Ford', 'Focus', 4, 101010);
+INSERT INTO CAR VALUES ('10BL004', 8000, 'Evet', 2023, 1200, 'Kırmızı', 'Tesla', 'Model 3', 3, 101010);
+INSERT INTO CAR VALUES ('10BL005', 15000, 'Evet', 2020, 1000, 'Mavi', 'BMW', '320i', 5, 101010);
+INSERT INTO CAR VALUES ('10BL006', 60000, 'Hayır', 2019, 500, 'Sarı', 'Fiat', 'Egea', 4, 101010);
+INSERT INTO CAR VALUES ('10BL007', 10000, 'Evet', 2023, 1800, 'Siyah', 'Mercedes', 'C180', 5, 101010);
+INSERT INTO CAR VALUES ('10BL008', 34000, 'Evet', 2021, 450, 'Beyaz', 'Tofaş', 'Kartal', 4, 101010);
+INSERT INTO CAR VALUES ('10BL009', 29000, 'Evet', 2020, 400, 'Gri', 'Şahin', 'SLX', 4, 101010);
+INSERT INTO CAR VALUES ('10BL010', 7000, 'Evet', 2024, 2500, 'Lacivert', 'Pagani', 'Huayra', 5, 101010);
+INSERT INTO CAR VALUES ('10BL011', 3000, 'Evet', 2023, 3000, 'Mavi', 'Bugatti', 'Chiron', 5, 101010);
+INSERT INTO CAR VALUES ('10BL012', 16000, 'Evet', 2021, 950, 'Kırmızı', 'Toyota', 'Supra', 5, 101010);
+INSERT INTO CAR VALUES ('10BL013', 18000, 'Evet', 2022, 1100, 'Gri', 'Alfa Romeo', 'Giulia', 5, 101010);
+INSERT INTO CAR VALUES ('10BL014', 20000, 'Evet', 2020, 2200, 'Siyah', 'Lamborghini', 'Urus', 5, 101010);
+INSERT INTO CAR VALUES ('10BL015', 24000, 'Hayır', 2021, 900, 'Beyaz', 'Honda', 'Civic', 2, 101010);
+INSERT INTO CAR VALUES ('10BAL016', 15000, 'Hayır', 2022, 950, 'Beyaz', 'Toyota', 'Corolla', 2, 101010);
+INSERT INTO CAR VALUES ('10BAL017', 20000, 'Hayır', 2021, 850, 'Siyah', 'Renault', 'Clio', 4, 101010);
+INSERT INTO CAR VALUES ('10BAL018', 5000, 'Evet', 2023, 1250, 'Gri', 'Volvo', 'XC60', 1, 101010);
+INSERT INTO CAR VALUES ('10BAL019', 1000, 'Hayır', 2024, 1600, 'Kırmızı', 'BMW', 'X5', 5, 101010);
+INSERT INTO CAR VALUES ('10BAL020', 30000, 'Evet', 2020, 700, 'Mavi', 'Fiat', 'Egea', 4, 101010);
+
+-- İstanbul Avrupa (343434)
+INSERT INTO CAR VALUES ('34AV001', 26000, 'Evet', 2021, 700, 'Kırmızı', 'Nissan', 'Qashqai', 1, 343434);
+INSERT INTO CAR VALUES ('34AV002', 17000, 'Hayır', 2020, 650, 'Siyah', 'Volkswagen', 'Golf', 2, 343434);
+INSERT INTO CAR VALUES ('34AV003', 31000, 'Evet', 2021, 800, 'Mavi', 'Renault', 'Megane', 2, 343434);
+INSERT INTO CAR VALUES ('34AV004', 8000, 'Evet', 2023, 1100, 'Siyah', 'Tesla', 'Model Y', 3, 343434);
+INSERT INTO CAR VALUES ('34AV005', 14000, 'Evet', 2022, 950, 'Gri', 'BMW', 'X3', 5, 343434);
+INSERT INTO CAR VALUES ('34AV006', 46000, 'Hayır', 2019, 500, 'Beyaz', 'Fiat', 'Linea', 4, 343434);
+INSERT INTO CAR VALUES ('34AV007', 12000, 'Evet', 2023, 1800, 'Siyah', 'Mercedes', 'A200', 5, 343434);
+INSERT INTO CAR VALUES ('34AV008', 33000, 'Evet', 2021, 450, 'Beyaz', 'Tofaş', 'Doğan', 4, 343434);
+INSERT INTO CAR VALUES ('34AV009', 39000, 'Evet', 2020, 400, 'Gri', 'Şahin', 'SL', 4, 343434);
+INSERT INTO CAR VALUES ('34AV010', 6000, 'Evet', 2023, 2400, 'Mavi', 'Pagani', 'Zonda', 5, 343434);
+INSERT INTO CAR VALUES ('34AV011', 2000, 'Hayır', 2023, 3100, 'Kırmızı', 'Bugatti', 'Veyron', 5, 343434);
+INSERT INTO CAR VALUES ('34AV012', 18000, 'Evet', 2021, 970, 'Sarı', 'Toyota', 'Supra GR', 5, 343434);
+INSERT INTO CAR VALUES ('34AV013', 20000, 'Evet', 2022, 1200, 'Gri', 'Alfa Romeo', 'Stelvio', 5, 343434);
+INSERT INTO CAR VALUES ('34AV014', 19000, 'Evet', 2020, 2300, 'Beyaz', 'Lamborghini', 'Aventador', 5, 343434);
+INSERT INTO CAR VALUES ('34AV015', 27000, 'Hayır', 2021, 850, 'Gri', 'Honda', 'Accord', 2, 343434);
+INSERT INTO CAR VALUES ('34AV016', 4000, 'Evet', 2023, 1100, 'Siyah', 'Tesla', 'Model Y', 3, 343434);
+INSERT INTO CAR VALUES ('34AV017', 8000, 'Hayır', 2021, 900, 'Kırmızı', 'Nissan', 'Qashqai', 1, 343434);
+INSERT INTO CAR VALUES ('34AV018', 12000, 'Evet', 2020, 750, 'Gri', 'Ford', 'Focus', 2, 343434);
+INSERT INTO CAR VALUES ('34AV019', 9000, 'Evet', 2022, 1000, 'Beyaz', 'Volkswagen', 'Golf', 2, 343434);
+INSERT INTO CAR VALUES ('34AV020', 2000, 'Hayır', 2023, 1550, 'Sarı', 'Ferrari', 'Roma', 5, 343434);
+
+-- İstanbul Anadolu (828282)
+INSERT INTO CAR VALUES ('34AN001', 22000, 'Evet', 2021, 750, 'Mavi', 'Toyota', 'Yaris', 2, 828282);
+INSERT INTO CAR VALUES ('34AN002', 18000, 'Evet', 2022, 800, 'Gri', 'Renault', 'Symbol', 2, 828282);
+INSERT INTO CAR VALUES ('34AN003', 40000, 'Hayır', 2020, 700, 'Siyah', 'Ford', 'Fiesta', 4, 828282);
+INSERT INTO CAR VALUES ('34AN004', 7000, 'Evet', 2023, 1300, 'Kırmızı', 'Tesla', 'Model S', 3, 828282);
+INSERT INTO CAR VALUES ('34AN005', 16000, 'Evet', 2020, 1100, 'Beyaz', 'BMW', 'X1', 5, 828282);
+INSERT INTO CAR VALUES ('34AN006', 55000, 'Hayır', 2019, 500, 'Sarı', 'Fiat', 'Doblo', 4, 828282);
+INSERT INTO CAR VALUES ('34AN007', 11000, 'Evet', 2023, 1900, 'Siyah', 'Mercedes', 'CLA 200', 5, 828282);
+INSERT INTO CAR VALUES ('34AN008', 37000, 'Evet', 2021, 470, 'Beyaz', 'Tofaş', 'Şahin', 4, 828282);
+INSERT INTO CAR VALUES ('34AN009', 28000, 'Evet', 2020, 420, 'Gri', 'Şahin', 'S', 4, 828282);
+INSERT INTO CAR VALUES ('34AN010', 6500, 'Evet', 2024, 2600, 'Mavi', 'Pagani', 'Zonda R', 5, 828282);
+INSERT INTO CAR VALUES ('34AN011', 3500, 'Hayır', 2023, 3200, 'Kırmızı', 'Bugatti', 'Divo', 5, 828282);
+INSERT INTO CAR VALUES ('34AN012', 17000, 'Evet', 2021, 990, 'Lacivert', 'Toyota', 'Supra A90', 5, 828282);
+INSERT INTO CAR VALUES ('34AN013', 19000, 'Evet', 2022, 1150, 'Gri', 'Alfa Romeo', 'Tonale', 5, 828282);
+INSERT INTO CAR VALUES ('34AN014', 21000, 'Evet', 2020, 2250, 'Siyah', 'Lamborghini', 'Huracan', 5, 828282);
+INSERT INTO CAR VALUES ('34AN015', 25000, 'Hayır', 2021, 880, 'Beyaz', 'Honda', 'City', 2, 828282);
+INSERT INTO CAR VALUES ('34AN016', 25000, 'Evet', 2019, 600, 'Kırmızı', 'Tofaş', 'Doğan', 4, 828282);
+INSERT INTO CAR VALUES ('34AN017', 10000, 'Hayır', 2022, 850, 'Gri', 'Honda', 'Civic', 2, 828282);
+INSERT INTO CAR VALUES ('34AN018', 5000, 'Evet', 2023, 1100, 'Siyah', 'Toyota', 'Yaris', 2, 828282);
+INSERT INTO CAR VALUES ('34AN019', 7000, 'Evet', 2022, 980, 'Mavi', 'Nissan', 'Micra', 4, 828282);
+INSERT INTO CAR VALUES ('34AN020', 0, 'Hayır', 2024, 1800, 'Sarı', 'Bugatti', 'Chiron', 5, 828282);
+
+-- Ankara Şubesi (606060)
+INSERT INTO CAR VALUES ('06AN001', 24000, 'Evet', 2021, 740, 'Gri', 'Nissan', 'Micra', 1, 606060);
+INSERT INTO CAR VALUES ('06AN002', 20000, 'Evet', 2022, 820, 'Beyaz', 'Volkswagen', 'Passat', 2, 606060);
+INSERT INTO CAR VALUES ('06AN003', 39000, 'Hayır', 2020, 680, 'Siyah', 'Renault', 'Talisman', 2, 606060);
+INSERT INTO CAR VALUES ('06AN004', 9000, 'Evet', 2023, 1150, 'Mavi', 'Tesla', 'Model X', 3, 606060);
+INSERT INTO CAR VALUES ('06AN005', 13000, 'Evet', 2022, 1050, 'Kırmızı', 'BMW', 'X5', 5, 606060);
+INSERT INTO CAR VALUES ('06AN006', 57000, 'Hayır', 2018, 520, 'Gri', 'Fiat', 'Fiorino', 4, 606060);
+INSERT INTO CAR VALUES ('06AN007', 14000, 'Evet', 2023, 1700, 'Siyah', 'Mercedes', 'GLA', 5, 606060);
+INSERT INTO CAR VALUES ('06AN008', 36000, 'Evet', 2021, 490, 'Beyaz', 'Tofaş', 'Murat 131', 4, 606060);
+INSERT INTO CAR VALUES ('06AN009', 31000, 'Evet', 2020, 430, 'Lacivert', 'Şahin', 'SLX', 4, 606060);
+INSERT INTO CAR VALUES ('06AN010', 6000, 'Evet', 2024, 2700, 'Sarı', 'Pagani', 'Huayra R', 5, 606060);
+INSERT INTO CAR VALUES ('06AN011', 2500, 'Hayır', 2023, 3300, 'Kırmızı', 'Bugatti', 'Centodieci', 5, 606060);
+INSERT INTO CAR VALUES ('06AN012', 15000, 'Evet', 2021, 1020, 'Gri', 'Toyota', 'Supra MK4', 5, 606060);
+INSERT INTO CAR VALUES ('06AN013', 20000, 'Evet', 2022, 1170, 'Gümüş', 'Alfa Romeo', 'Brera', 5, 606060);
+INSERT INTO CAR VALUES ('06AN014', 23000, 'Evet', 2020, 2350, 'Siyah', 'Lamborghini', 'Gallardo', 5, 606060);
+INSERT INTO CAR VALUES ('06AN015', 26000, 'Hayır', 2021, 890, 'Beyaz', 'Honda', 'Jazz', 2, 606060);
+INSERT INTO CAR VALUES ('06ANK016', 17000, 'Evet', 2021, 970, 'Gri', 'Alfa Romeo', 'Giulia', 2, 606060);
+INSERT INTO CAR VALUES ('06ANK017', 3000, 'Hayır', 2023, 1450, 'Beyaz', 'Maserati', 'Ghibli', 5, 606060);
+INSERT INTO CAR VALUES ('06ANK018', 12000, 'Evet', 2022, 990, 'Siyah', 'Renault', 'Megane', 2, 606060);
+INSERT INTO CAR VALUES ('06ANK019', 6000, 'Hayır', 2023, 1100, 'Kırmızı', 'Supra', 'MK5', 5, 606060);
+INSERT INTO CAR VALUES ('06ANK020', 18000, 'Evet', 2020, 870, 'Beyaz', 'Fiat', 'Linea', 4, 606060);
+
+--Batman Şubesi(727272)
+INSERT INTO CAR VALUES ('72BT001', 23000, 'Evet', 2021, 720, 'Gri', 'Nissan', 'Juke', 1, 727272);
+INSERT INTO CAR VALUES ('72BT002', 19000, 'Evet', 2022, 790, 'Beyaz', 'Volkswagen', 'Polo', 2, 727272);
+INSERT INTO CAR VALUES ('72BT003', 37000, 'Hayır', 2020, 670, 'Siyah', 'Renault', 'Kadjar', 2, 727272);
+INSERT INTO CAR VALUES ('72BT004', 10000, 'Evet', 2023, 1250, 'Mavi', 'Tesla', 'Roadster', 3, 727272);
+INSERT INTO CAR VALUES ('72BT005', 12000, 'Evet', 2022, 1070, 'Kırmızı', 'BMW', 'i8', 5, 727272);
+INSERT INTO CAR VALUES ('72BT006', 52000, 'Hayır', 2019, 530, 'Gri', 'Fiat', 'Palio', 4, 727272);
+INSERT INTO CAR VALUES ('72BT007', 15000, 'Evet', 2023, 1750, 'Siyah', 'Mercedes', 'GLC', 5, 727272);
+INSERT INTO CAR VALUES ('72BT008', 35000, 'Evet', 2021, 480, 'Beyaz', 'Tofaş', 'Doğan SL', 4, 727272);
+INSERT INTO CAR VALUES ('72BT009', 30000, 'Evet', 2020, 440, 'Gri', 'Şahin', 'S', 4, 727272);
+INSERT INTO CAR VALUES ('72BT010', 5500, 'Evet', 2024, 2650, 'Kırmızı', 'Pagani', 'Utopia', 5, 727272);
+INSERT INTO CAR VALUES ('72BT011', 2800, 'Hayır', 2023, 3350, 'Mavi', 'Bugatti', 'La Voiture Noire', 5, 727272);
+INSERT INTO CAR VALUES ('72BT012', 15500, 'Evet', 2021, 1040, 'Gri', 'Toyota', 'Supra Racing', 5, 727272);
+INSERT INTO CAR VALUES ('72BT013', 20500, 'Evet', 2022, 1180, 'Lacivert', 'Alfa Romeo', 'Spider', 5, 727272);
+INSERT INTO CAR VALUES ('72BT014', 22000, 'Evet', 2020, 2400, 'Siyah', 'Lamborghini', 'Veneno', 5, 727272);
+INSERT INTO CAR VALUES ('72BT015', 25500, 'Hayır', 2021, 870, 'Beyaz', 'Honda', 'HR-V', 2, 727272);
+INSERT INTO CAR VALUES ('72BAT016', 14000, 'Evet', 2021, 760, 'Mavi', 'Volkswagen', 'Passat', 2, 727272);
+INSERT INTO CAR VALUES ('72BAT017', 8000, 'Hayır', 2022, 1050, 'Siyah', 'Lamborghini', 'Huracan', 5, 727272);
+INSERT INTO CAR VALUES ('72BAT018', 9500, 'Evet', 2021, 780, 'Gri', 'Honda', 'Jazz', 2, 727272);
+INSERT INTO CAR VALUES ('72BAT019', 1000, 'Hayır', 2024, 1600, 'Kırmızı', 'Pagani', 'Huayra', 5, 727272);
+INSERT INTO CAR VALUES ('72BAT020', 22000, 'Evet', 2020, 880, 'Beyaz', 'Ford', 'Fiesta', 4, 727272);
+
+--ADRES VERİLERİ
+INSERT INTO ADDRESSES VALUES (1, 34000, 'İstanbul', 'Kadıköy');
+INSERT INTO ADDRESSES VALUES (2, 34310, 'İstanbul', 'Beşiktaş');
+INSERT INTO ADDRESSES VALUES (3, 34100, 'İstanbul', 'Fatih');
+INSERT INTO ADDRESSES VALUES (4, 06000, 'Ankara', 'Çankaya');
+INSERT INTO ADDRESSES VALUES (5, 06100, 'Ankara', 'Keçiören');
+INSERT INTO ADDRESSES VALUES (6, 42000, 'Konya', 'Selçuklu');
+INSERT INTO ADDRESSES VALUES (7, 42100, 'Konya', 'Meram');
+INSERT INTO ADDRESSES VALUES (8, 01000, 'Adana', 'Seyhan');
+INSERT INTO ADDRESSES VALUES (9, 01100, 'Adana', 'Yüreğir');
+INSERT INTO ADDRESSES VALUES (10, 07000, 'Antalya', 'Muratpaşa');
+INSERT INTO ADDRESSES VALUES (11, 07100, 'Antalya', 'Kepez');
+INSERT INTO ADDRESSES VALUES (12, 35000, 'İzmir', 'Bornova');
+INSERT INTO ADDRESSES VALUES (13, 35100, 'İzmir', 'Konak');
+INSERT INTO ADDRESSES VALUES (14, 44000, 'Malatya', 'Battalgazi');
+INSERT INTO ADDRESSES VALUES (15, 10010, 'Balıkesir', 'Altıeylül');
+INSERT INTO ADDRESSES VALUES (16, 10100, 'Balıkesir', 'Bandırma');
+INSERT INTO ADDRESSES VALUES (17, 38000, 'Kayseri', 'Melikgazi');
+INSERT INTO ADDRESSES VALUES (18, 43000, 'Kütahya', 'Merkez');
+INSERT INTO ADDRESSES VALUES (19, 20000, 'Denizli', 'Pamukkale');
+INSERT INTO ADDRESSES VALUES (20, 20100, 'Denizli', 'Merkezefendi');
+INSERT INTO ADDRESSES VALUES (21, 10000, 'Bursa', 'Osmangazi');
+INSERT INTO ADDRESSES VALUES (22, 10110, 'Bursa', 'Nilüfer');
+INSERT INTO ADDRESSES VALUES (23, 10200, 'Bursa', 'Yıldırım');
+INSERT INTO ADDRESSES VALUES (24, 60000, 'Sivas', 'Merkez');
+INSERT INTO ADDRESSES VALUES (25, 52000, 'Ordu', 'Altınordu');
+INSERT INTO ADDRESSES VALUES (26, 52100, 'İstanbul', 'Kartal');
+INSERT INTO ADDRESSES VALUES (27, 21000, 'Diyarbakır', 'Bağlar');
+INSERT INTO ADDRESSES VALUES (28, 21100, 'Diyarbakır', 'Kayapınar');
+INSERT INTO ADDRESSES VALUES (29, 55000, 'Samsun', 'İlkadım');
+INSERT INTO ADDRESSES VALUES (30, 65000, 'Van', 'İpekyolu');
+INSERT INTO ADDRESSES VALUES (31, 47000, 'Mardin', 'Artuklu');
+INSERT INTO ADDRESSES VALUES (32, 16000, 'Eskişehir', 'Odunpazarı');
+INSERT INTO ADDRESSES VALUES (33, 53000, 'Sinop', 'Türkeli');
+INSERT INTO ADDRESSES VALUES (34, 53100, 'Rize', 'Çayeli');
+INSERT INTO ADDRESSES VALUES (35, 76000, 'Iğdır', 'Merkez');
+INSERT INTO ADDRESSES VALUES (36, 58000, 'İstanbul', 'Maltepe');
+INSERT INTO ADDRESSES VALUES (37, 14000, 'İstanbul', 'Beylikdüzü');
+INSERT INTO ADDRESSES VALUES (38, 14100, 'İstanbul', 'Avcılar');
+INSERT INTO ADDRESSES VALUES (39, 72000, 'Batman', 'Merkez');
+INSERT INTO ADDRESSES VALUES (40, 72100, 'Batman', 'Hasankeyf');
+
+-- CUSTOMER VERİLERİ
+INSERT INTO CUSTOMER VALUES (1, 'Barsen', 'Arslan', 'barsen.arslan@gmail.com', '05301234567', DATE '2003-08-03', 672240, 'pass123', 1);
+INSERT INTO CUSTOMER VALUES (2, 'Bali', 'Gülen', 'bali.gülen@gmail.com', '05311234567', DATE '1997-06-22', 319223, 'hello1', 1);
+INSERT INTO CUSTOMER VALUES (3, 'Barış', 'Manço', 'baris.manço@gmail.com', '05321234567', DATE '1959-02-02', 541730, 'qwerty', 2);
+INSERT INTO CUSTOMER VALUES (4, 'İlayda', 'Altun', 'ilayda.altun@gmail.com', '05331234567', DATE '2006-11-29', 890253, 'abcd1234', 2);
+INSERT INTO CUSTOMER VALUES (5, 'Çağlasın', 'Soylu', 'çağlasın.soylu@gmail.com', '05341234567', DATE '2005-04-21', 955655, 'welcome', 3);
+INSERT INTO CUSTOMER VALUES (6, 'Fügen', 'Sakarya', 'fügen.sakarya@gmail.com', '05351234567', DATE '1984-05-03', 588279, 'letmein', 4);
+INSERT INTO CUSTOMER VALUES (7, 'Ayşeana', 'Şensoy', 'ayşeana.şensoy@gmail.com', '05361234567', DATE '1985-07-11', 174434, 'password1', 4);
+INSERT INTO CUSTOMER VALUES (8, 'Nurmelek', 'Akdeniz', 'nurmelek.akdeniz@gmail.com', '05371234567', DATE '2005-06-09', 605340, '12345678', 5);
+INSERT INTO CUSTOMER VALUES (9, 'Leyli', 'Çetin', 'leyli.çetin@gmail.com', '05381234567', DATE '1961-01-03', 308180, 'football', 5);
+INSERT INTO CUSTOMER VALUES (10, 'Hasret', 'Durdu', 'hasret.durdu@gmail.com', '05391234567', DATE '1995-08-23', 462263, 'iloveyou', 6);
+INSERT INTO CUSTOMER VALUES (11, 'Sudi', 'Mansız', 'sudi.mansız@gmail.com', '05401234567', DATE '1956-05-01', 387486, 'admin123', 6);
+INSERT INTO CUSTOMER VALUES (12, 'Yağmur', 'Demirel', 'yagmur.demirel@gmail.com', '05411234567', DATE '1984-01-10', 556774, 'sunshine', 7);
+INSERT INTO CUSTOMER VALUES (13, 'Umutcan', 'Alemdar', 'umutcan.alemdar@gmail.com', '05421234567', DATE '1994-12-13', 742565, 'monkey', 7);
+INSERT INTO CUSTOMER VALUES (14, 'Nurveren', 'Tarhan', 'nurveren.tarhan@gmail.com', '05431234567', DATE '1974-03-25', 339873, 'starwars', 8);
+INSERT INTO CUSTOMER VALUES (15, 'Atılgan', 'Arslan', 'atılgan.arslan@gmail.com', '05441234567', DATE '1966-06-16', 100789, 'winter', 8);
+INSERT INTO CUSTOMER VALUES (16, 'Aydinç', 'Zengin', 'aydinç.zengin@gmail.com', '05451234567', DATE '1959-01-10', 220471, 'summer', 9);
+INSERT INTO CUSTOMER VALUES (17, 'Nural', 'Şafak', 'nural.şafak@gmail.com', '05461234567', DATE '1966-01-21', 918709, 'spring', 9);
+INSERT INTO CUSTOMER VALUES (18, 'Kardelen', 'Konar', 'kardelen.konar@gmail.com', '05471234567', DATE '1970-04-21', 977971, 'autumn', 10);
+INSERT INTO CUSTOMER VALUES (19, 'Süleyla', 'Arslan', 'süleyla.arslan@gmail.com', '05481234567', DATE '1995-10-13', 518165, 'dragon', 10);
+INSERT INTO CUSTOMER VALUES (20, 'Meleknur', 'Gülen', 'meleknur.gülen@gmail.com', '05491234567', DATE '1989-02-13', 765043, 'butterfly', 11);
+INSERT INTO CUSTOMER VALUES (21, 'Gülsevil', 'Bilir', 'gülsevil.bilir@gmail.com', '05501234567', DATE '1967-04-07', 864058, 'rainbow', 11);
+INSERT INTO CUSTOMER VALUES (22, 'Yağız', 'Zorlu', 'yagiz.zorlu@gmail.com', '05511234567', DATE '2001-09-10', 681821, 'cardriver', 12);
+INSERT INTO CUSTOMER VALUES (23, 'Merve', 'Gül', 'merve.gül@gmail.com', '05521234567', DATE '2001-02-10', 848336, 'lightning', 12);
+INSERT INTO CUSTOMER VALUES (24, 'Serdar', 'Gülmez', 'serdar.gulmez@gmail.com', '05531234567', DATE '1983-05-16', 892759, 'nosmile72', 13);
+INSERT INTO CUSTOMER VALUES (25, 'Fernando', 'Muslera', 'fernando.muslera@gmail.com', '05541234567', DATE '1982-09-09', 576853, 'river', 13);
+INSERT INTO CUSTOMER VALUES (26, 'Peren', 'Duran', 'peren.duran@gmail.com', '05551234567', DATE '1982-05-24', 168870, 'ocean', 14);
+INSERT INTO CUSTOMER VALUES (27, 'Güverçin', 'Akar', 'güverçin.akar@gmail.com', '05561234567', DATE '2006-01-02', 250404, 'desert', 14);
+INSERT INTO CUSTOMER VALUES (28, 'Kiyasi', 'Eraslan', 'kiyasi.eraslan@gmail.com', '05571234567', DATE '2003-09-21', 374284, 'forest', 15);
+INSERT INTO CUSTOMER VALUES (29, 'Kotuz', 'Hançer', 'kotuz.hançer@gmail.com', '05581234567', DATE '1986-07-27', 710464, 'valley', 15);
+INSERT INTO CUSTOMER VALUES (30, 'Yahşi', 'Yorulmaz', 'yahşi.yorulmaz@gmail.com', '05591234567', DATE '2004-09-21', 402924, 'canyon', 16);
+INSERT INTO CUSTOMER VALUES (31, 'Muhammed', 'Altın', 'muhammed.altin@gmail.com', '05601234567', DATE '2002-07-29', 856285, 'asistan10', 16);
+INSERT INTO CUSTOMER VALUES (32, 'Gül', 'Durdu', 'gül.durdu@gmail.com', '05611234567', DATE '1964-09-30', 400068, 'meadow', 17);
+INSERT INTO CUSTOMER VALUES (33, 'Nisa', 'Doymaz', 'nisa.doymaz@gmail.com', '05621234567', DATE '1953-07-16', 308335, 'iamhungry', 17);
+INSERT INTO CUSTOMER VALUES (34, 'Simber', 'Tarhan', 'simber.tarhan@gmail.com', '05631234567', DATE '1964-05-13', 398063, 'savanna', 18);
+INSERT INTO CUSTOMER VALUES (35, 'Tecimer', 'Sezer', 'tecimer.sezer@gmail.com', '05641234567', DATE '1983-06-29', 776167, 'tundra', 19);
+INSERT INTO CUSTOMER VALUES (36, 'Lüfen', 'Vurmaz', 'lüfen.vurmaz@gmail.com', '05651234567', DATE '1964-03-21', 655006, 'glacier', 19);
+INSERT INTO CUSTOMER VALUES (37, 'Saydam', 'Duran', 'saydam.duran@gmail.com', '05661234567', DATE '2006-12-16', 905670, 'volcano', 20);
+INSERT INTO CUSTOMER VALUES (38, 'Yurtseven', 'Çamurcuoğlu', 'yurtseven.çamurcuoğlu@gmail.com', '05671234567', DATE '2005-03-19', 855696, 'waterfall', 20);
+INSERT INTO CUSTOMER VALUES (39, 'Bozbağ', 'Ülker', 'bozbağ.ülker@gmail.com', '05681234567', DATE '2003-03-11', 389740, 'lagoon', 21);
+INSERT INTO CUSTOMER VALUES (40, 'Emre', 'Aslan', 'emre.aslan@gmail.com', '05691234567', DATE '1952-02-22', 583039, 'delta', 21);
+INSERT INTO CUSTOMER VALUES (41, 'Eren', 'Düzgün', 'eren.düzgün@gmail.com', '05701234567', DATE '1965-05-12', 157432, 'estuary', 22);
+INSERT INTO CUSTOMER VALUES (42, 'Recepali', 'İnönü', 'recepali.i̇nönü@gmail.com', '05711234567', DATE '1996-04-02', 589456, 'fjord', 22);
+INSERT INTO CUSTOMER VALUES (43, 'Hatice', 'Akçay', 'hatice.akçay@gmail.com', '05721234567', DATE '1979-12-19', 970954, 'geyser', 23);
+INSERT INTO CUSTOMER VALUES (44, 'Rahiye', 'Arsoy', 'rahiye.arsoy@gmail.com', '05731234567', DATE '1953-12-28', 903040, 'hotspring', 23);
+INSERT INTO CUSTOMER VALUES (45, 'Ayşe', 'Çorlu', 'ayşe.çorlu@gmail.com', '05741234567', DATE '1994-12-31', 119079, 'oasis', 24);
+INSERT INTO CUSTOMER VALUES (46, 'Erensoy', 'Bilir', 'erensoy.bilir@gmail.com', '05751234567', DATE '1949-09-02', 633982, 'peninsula', 24);
+INSERT INTO CUSTOMER VALUES (47, 'Giz', 'Duran', 'giz.duran@gmail.com', '05761234567', DATE '1976-06-24', 465611, 'archipelago', 25);
+INSERT INTO CUSTOMER VALUES (48, 'Yunt', 'Akça', 'yunt.akça@gmail.com', '05771234567', DATE '1997-03-01', 352399, 'atoll', 25);
+INSERT INTO CUSTOMER VALUES (49, 'Ayten', 'Korutürk', 'ayten.korutürk@gmail.com', '05781234567', DATE '1991-09-27', 379525, 'coralreef', 26);
+INSERT INTO CUSTOMER VALUES (50, 'Oğurata', 'Yorulmaz', 'oğurata.yorulmaz@gmail.com', '05791234567', DATE '1951-10-08', 784429, 'sanddune', 26);
+INSERT INTO CUSTOMER VALUES (51, 'Hansultan', 'Çorlu', 'hansultan.çorlu@gmail.com', '05801234567', DATE '2001-02-24', 895798, 'saltflat', 27);
+INSERT INTO CUSTOMER VALUES (52, 'Özpetek', 'Şener', 'özpetek.şener@gmail.com', '05811234567', DATE '1985-09-03', 802364, 'badlands', 27);
+INSERT INTO CUSTOMER VALUES (53, 'Sümerya', 'Soylu', 'sümerya.soylu@gmail.com', '05821234567', DATE '1967-09-28', 335848, 'wetland', 28);
+INSERT INTO CUSTOMER VALUES (54, 'Mufide', 'Demirel', 'mufide.demirel@gmail.com', '05831234567', DATE '1984-01-20', 789838, 'marsh', 28);
+INSERT INTO CUSTOMER VALUES (55, 'Hurşide', 'Sakarya', 'hurşide.sakarya@gmail.com', '05841234567', DATE '1992-12-07', 439294, 'swamp', 29);
+INSERT INTO CUSTOMER VALUES (56, 'Çerçi', 'Zorlu', 'çerçi.zorlu@gmail.com', '05851234567', DATE '2003-10-04', 880052, 'bogsert', 29);
+INSERT INTO CUSTOMER VALUES (57, 'Emre', 'Yılmaz', 'emre.yilmaz@gmail.com', '05861234567', DATE '2005-05-29', 901410, 'matematikvsfen', 30);
+INSERT INTO CUSTOMER VALUES (58, 'Melaha', 'İhsanoğlu', 'melaha.i̇hsanoğlu@gmail.com', '05871234567', DATE '1949-09-07', 420873, 'moor', 30);
+INSERT INTO CUSTOMER VALUES (59, 'Adal', 'Çamurcuoğlu', 'adal.çamurcuoğlu@gmail.com', '05881234567', DATE '1966-04-12', 922644, 'heath', 31);
+INSERT INTO CUSTOMER VALUES (60, 'Tanyolaç', 'Durdu', 'tanyolaç.durdu@gmail.com', '05891234567', DATE '1999-12-02', 797020, 'steppe', 31);
+INSERT INTO CUSTOMER VALUES (61, 'Salurbay', 'Arslan', 'salurbay.arslan@gmail.com', '05901234567', DATE '2003-05-17', 807879, 'pampas', 32);
+INSERT INTO CUSTOMER VALUES (62, 'Aysuna', 'Fırat', 'aysuna.fırat@gmail.com', '05911234567', DATE '1990-07-11', 388307, 'llano', 32);
+INSERT INTO CUSTOMER VALUES (63, 'Okanay', 'Türk', 'okanay.türk@gmail.com', '05921234567', DATE '1999-09-20', 975544, 'veldt', 33);
+INSERT INTO CUSTOMER VALUES (64, 'Emre', 'Zorba', 'emre.zorba@gmail.com', '05931234567', DATE '1954-05-21', 203493, 'crymore5', 33);
+INSERT INTO CUSTOMER VALUES (65, 'Ulu', 'İnönü', 'ulu.i̇nönü@gmail.com', '05941234567', DATE '2005-03-14', 668509, 'bush', 34);
+INSERT INTO CUSTOMER VALUES (66, 'Şahat', 'Şener', 'şahat.şener@gmail.com', '05951234567', DATE '2000-08-20', 263502, 'scrub', 34);
+INSERT INTO CUSTOMER VALUES (67, 'Şirivan', 'Öcalan', 'şirivan.öcalan@gmail.com', '05961234567', DATE '1973-06-08', 430550, 'chaparral', 35);
+INSERT INTO CUSTOMER VALUES (68, 'Nazlim', 'Tevetoğlu', 'nazlim.tevetoğlu@gmail.com', '05971234567', DATE '1996-01-23', 628446, 'thicket', 35);
+INSERT INTO CUSTOMER VALUES (69, 'Rana', 'Erdoğan', 'rana.erdoğan@gmail.com', '05981234567', DATE '1957-04-19', 541481, 'copse', 36);
+INSERT INTO CUSTOMER VALUES (70, 'Tahir', 'Gülen', 'tahir.gülen@gmail.com', '05991234567', DATE '1977-11-06', 312757, 'grove', 36);
+INSERT INTO CUSTOMER VALUES (71, 'Oruç', 'Soylu', 'oruç.soylu@gmail.com', '05001234567', DATE '1968-06-21', 825896, 'stand', 37);
+INSERT INTO CUSTOMER VALUES (72, 'Serdar', 'Güler', 'serdar.güler@gmail.com', '05011234567', DATE '2000-01-20', 910141, 'iamvenom', 37);
+INSERT INTO CUSTOMER VALUES (73, 'Erdal', 'Yılmaz', 'erdal.yilmaz@gmail.com', '05021234567', DATE '1971-11-08', 465893, 'coppice', 38);
+INSERT INTO CUSTOMER VALUES (74, 'Zeynep', 'Yılmaz', 'zeynep.yilmaz@gmail.com', '05031234567', DATE '1960-02-15', 330289, 'brake', 38);
+INSERT INTO CUSTOMER VALUES (75, 'Emre', 'Yılan', 'emre.yilan@gmail.com', '05041234567', DATE '2004-05-29', 461699, 'snake57340', 38);
+INSERT INTO CUSTOMER VALUES (76, 'Büşra', 'Yılmaz', 'busra.yilmaz@gmail.com', '05051234567', DATE '1980-06-11', 105177, 'cute57', 38);
+INSERT INTO CUSTOMER VALUES (77, 'Beyzanur', 'Anık', 'beyzanur.anik@gmail.com', '05061234567', DATE '1991-10-14', 116746, 'frith', 39);
+INSERT INTO CUSTOMER VALUES (78, 'Ceren', 'Mutsuz', 'ceren.mutsuz@gmail.com', '05071234567', DATE '1965-04-07', 486868, 'nohappy', 39);
+INSERT INTO CUSTOMER VALUES (79, 'Aymen', 'Khan', 'aymen.khan@gmail.com', '05081234567', DATE '2003-10-22', 924685, 'rabbit', 40);
+INSERT INTO CUSTOMER VALUES (80, 'Fatmanur', 'Sezer', 'fatmanur.sezer@gmail.com', '05091234567', DATE '2003-04-04', 617473, 'strath', 40);
+
+/* Rents */
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (1, DATE '2023-05-26', DATE '2023-05-06', '10BL014', 20, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (2, DATE '2022-08-16', DATE '2022-08-15', '10BL010', 22, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (3, DATE '2023-09-10', DATE '2023-08-22', '10BL008', 6, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (4, DATE '2020-10-16', DATE '2020-10-10', '10BAL020', 64, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (5, DATE '2024-11-10', DATE '2024-11-06', '10BL013', 72, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (6, DATE '2022-01-11', DATE '2022-01-08', '10BL012', 9, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (7, DATE '2023-05-15', DATE '2023-05-01', '10BL014', 76, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (8, DATE '2023-01-02', DATE '2022-12-30', '10BL007', 30, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (9, DATE '2025-03-22', DATE '2025-03-20', '10BL008', 40, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (10, DATE '2021-06-09', DATE '2021-05-27', '10BAL018', 25, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (11, DATE '2023-05-30', DATE '2023-05-26', '10BL014', 5, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (12, DATE '2021-09-13', DATE '2021-09-02', '10BL014', 29, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (13, DATE '2023-12-28', DATE '2023-12-13', '10BL011', 50, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (14, DATE '2022-10-27', DATE '2022-10-07', '10BL008', 36, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (15, DATE '2022-04-14', DATE '2022-04-07', '10BL005', 53, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (16, DATE '2021-06-06', DATE '2021-05-26', '10BL004', 5, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (17, DATE '2021-11-16', DATE '2021-10-28', '10BL007', 34, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (18, DATE '2022-12-13', DATE '2022-11-30', '10BL014', 23, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (19, DATE '2022-03-17', DATE '2022-03-02', '10BL004', 47, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (20, DATE '2024-06-02', DATE '2024-05-14', '10BL008', 64, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (21, DATE '2023-02-25', DATE '2023-02-18', '34AV005', 52, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (22, DATE '2023-10-10', DATE '2023-09-28', '34AV014', 5, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (23, DATE '2020-02-02', DATE '2020-01-15', '34AV014', 31, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (24, DATE '2023-12-24', DATE '2023-12-06', '34AV014', 61, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (25, DATE '2023-01-06', DATE '2023-01-04', '34AV007', 78, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (26, DATE '2019-07-24', DATE '2019-07-13', '34AV012', 38, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (27, DATE '2022-07-12', DATE '2022-06-28', '34AV005', 51, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (28, DATE '2020-12-23', DATE '2020-12-18', '34AV010', 49, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (29, DATE '2024-04-23', DATE '2024-04-10', '34AV005', 16, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (30, DATE '2019-06-22', DATE '2019-06-06', '34AV010', 18, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (31, DATE '2023-10-04', DATE '2023-10-03', '34AV012', 68, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (32, DATE '2025-01-01', DATE '2024-12-16', '34AV018', 73, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (33, DATE '2021-04-11', DATE '2021-04-07', '34AV018', 38, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (34, DATE '2020-02-12', DATE '2020-02-08', '34AV007', 32, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (35, DATE '2019-10-16', DATE '2019-10-15', '34AV008', 64, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (36, DATE '2023-06-16', DATE '2023-06-11', '34AV003', 66, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (37, DATE '2023-09-06', DATE '2023-09-05', '34AV018', 20, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (38, DATE '2020-08-01', DATE '2020-07-24', '34AV018', 24, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (39, DATE '2023-08-13', DATE '2023-07-31', '34AV001', 8, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (40, DATE '2021-12-16', DATE '2021-11-26', '34AV014', 65, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (41, DATE '2024-08-18', DATE '2024-08-09', '34AN008', 75, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (42, DATE '2022-10-18', DATE '2022-09-28', '34AN001', 70, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (43, DATE '2019-07-25', DATE '2019-07-09', '34AN013', 60, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (44, DATE '2022-11-06', DATE '2022-10-21', '34AN008', 34, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (45, DATE '2024-11-05', DATE '2024-10-22', '34AN008', 2, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (46, DATE '2021-11-25', DATE '2021-11-22', '34AN002', 68, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (47, DATE '2019-07-04', DATE '2019-06-14', '34AN007', 76, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (48, DATE '2021-02-13', DATE '2021-02-06', '34AN001', 45, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (49, DATE '2020-04-25', DATE '2020-04-20', '34AN018', 71, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (50, DATE '2019-11-22', DATE '2019-11-14', '34AN014', 7, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (51, DATE '2024-10-05', DATE '2024-09-21', '34AN004', 27, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (52, DATE '2021-06-10', DATE '2021-05-30', '34AN007', 27, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (53, DATE '2025-01-03', DATE '2024-12-31', '34AN012', 31, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (54, DATE '2019-10-08', DATE '2019-09-23', '34AN016', 21, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (55, DATE '2024-04-01', DATE '2024-03-30', '34AN004', 53, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (56, DATE '2021-11-15', DATE '2021-11-09', '34AN001', 15, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (57, DATE '2024-05-12', DATE '2024-04-26', '34AN010', 53, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (58, DATE '2022-02-13', DATE '2022-02-06', '34AN008', 36, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (59, DATE '2022-08-11', DATE '2022-07-25', '34AN009', 63, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (60, DATE '2022-04-17', DATE '2022-04-02', '34AN002', 37, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (61, DATE '2025-04-07', DATE '2025-03-21', '06AN001', 13, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (62, DATE '2020-10-03', DATE '2020-09-22', '06AN007', 35, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (63, DATE '2024-06-09', DATE '2024-05-30', '06AN014', 50, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (64, DATE '2021-09-23', DATE '2021-09-08', '06AN014', 71, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (65, DATE '2022-08-03', DATE '2022-07-27', '06AN004', 34, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (66, DATE '2023-12-02', DATE '2023-11-12', '06ANK016', 12, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (67, DATE '2023-12-28', DATE '2023-12-08', '06AN007', 1, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (68, DATE '2024-01-02', DATE '2023-12-20', '06AN002', 48, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (69, DATE '2023-06-01', DATE '2023-05-15', '06ANK020', 25, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (70, DATE '2023-09-15', DATE '2023-08-28', '06AN005', 44, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (71, DATE '2021-12-16', DATE '2021-12-07', '06AN012', 77, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (72, DATE '2020-09-23', DATE '2020-09-03', '06ANK016', 2, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (73, DATE '2023-05-05', DATE '2023-04-17', '06AN009', 35, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (74, DATE '2023-12-05', DATE '2023-12-02', '06AN008', 71, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (75, DATE '2020-08-08', DATE '2020-07-26', '06AN010', 52, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (76, DATE '2025-04-13', DATE '2025-03-24', '06AN004', 68, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (77, DATE '2024-03-18', DATE '2024-03-10', '06ANK016', 19, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (78, DATE '2023-04-25', DATE '2023-04-17', '06AN007', 65, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (79, DATE '2022-07-16', DATE '2022-07-09', '06ANK020', 75, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (80, DATE '2023-09-27', DATE '2023-09-14', '06AN014', 75, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (81, DATE '2024-09-14', DATE '2024-09-11', '72BAT020', 62, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (82, DATE '2024-06-23', DATE '2024-06-03', '72BT005', 12, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (83, DATE '2023-09-20', DATE '2023-09-07', '72BT009', 11, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (84, DATE '2023-07-15', DATE '2023-06-30', '72BT001', 64, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (85, DATE '2023-05-26', DATE '2023-05-25', '72BT013', 78, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (86, DATE '2024-09-01', DATE '2024-08-29', '72BAT016', 51, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (87, DATE '2023-08-20', DATE '2023-08-10', '72BT014', 45, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (88, DATE '2024-10-10', DATE '2024-09-23', '72BT001', 46, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (89, DATE '2022-04-06', DATE '2022-04-05', '72BT010', 25, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (90, DATE '2024-10-03', DATE '2024-09-13', '72BT009', 1, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (91, DATE '2024-02-28', DATE '2024-02-20', '72BT013', 28, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (92, DATE '2021-12-11', DATE '2021-11-21', '72BAT018', 78, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (93, DATE '2023-10-14', DATE '2023-09-24', '72BT005', 64, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (94, DATE '2022-09-07', DATE '2022-09-01', '72BT014', 75, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (95, DATE '2021-12-11', DATE '2021-11-29', '72BT004', 37, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (96, DATE '2023-05-02', DATE '2023-04-24', '72BT005', 68, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (97, DATE '2023-11-17', DATE '2023-10-28', '72BAT016', 1, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (98, DATE '2024-05-02', DATE '2024-04-25', '72BT013', 71, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (99, DATE '2023-06-14', DATE '2023-05-25', '72BT010', 72, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (100, DATE '2022-06-03', DATE '2022-06-01', '72BT007', 14, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (101, DATE '2019-10-21', DATE '2019-10-01', '34AV018', 31, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (102, DATE '2024-03-31', DATE '2024-03-15', '34AN010', 58, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (103, DATE '2021-12-25', DATE '2021-12-17', '72BAT020', 40, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (104, DATE '2022-09-27', DATE '2022-09-12', '34AN009', 58, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (105, DATE '2023-03-16', DATE '2023-03-09', '72BT012', 44, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (106, DATE '2022-09-01', DATE '2022-08-18', '72BT002', 48, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (107, DATE '2021-03-11', DATE '2021-02-24', '06AN014', 13, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (108, DATE '2020-11-28', DATE '2020-11-19', '34AN012', 3, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (109, DATE '2021-11-19', DATE '2021-11-10', '06AN001', 57, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (110, DATE '2021-08-06', DATE '2021-07-27', '34AV010', 45, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (111, DATE '2024-12-31', DATE '2024-12-25', '34AN008', 14, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (112, DATE '2021-07-16', DATE '2021-07-03', '34AN012', 79, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (113, DATE '2024-03-23', DATE '2024-03-11', '06AN002', 1, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (114, DATE '2022-01-05', DATE '2021-12-22', '34AN001', 69, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (115, DATE '2021-08-28', DATE '2021-08-17', '34AV008', 61, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (116, DATE '2021-02-16', DATE '2021-02-06', '72BT002', 34, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (117, DATE '2024-12-22', DATE '2024-12-18', '34AV003', 42, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (118, DATE '2020-10-04', DATE '2020-09-16', '34AN005', 74, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (119, DATE '2024-12-13', DATE '2024-12-11', '10BL011', 16, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (120, DATE '2021-04-09', DATE '2021-03-30', '34AV018', 78, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (121, DATE '2019-12-01', DATE '2019-11-17', '34AV016', 47, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (122, DATE '2024-09-25', DATE '2024-09-15', '34AN001', 58, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (123, DATE '2023-05-08', DATE '2023-05-04', '72BT001', 38, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (124, DATE '2025-04-07', DATE '2025-03-27', '34AN008', 28, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (125, DATE '2021-05-25', DATE '2021-05-11', '34AN019', 41, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (126, DATE '2023-10-09', DATE '2023-09-21', '34AV001', 26, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (127, DATE '2021-11-20', DATE '2021-11-06', '34AV018', 75, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (128, DATE '2021-03-19', DATE '2021-02-27', '34AV005', 2, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (129, DATE '2023-06-06', DATE '2023-05-21', '34AN019', 38, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (130, DATE '2022-08-20', DATE '2022-08-11', '72BT013', 59, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (131, DATE '2022-01-02', DATE '2021-12-31', '34AV014', 59, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (132, DATE '2025-01-21', DATE '2025-01-18', '72BAT018', 79, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (133, DATE '2023-02-17', DATE '2023-02-07', '34AV018', 80, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (134, DATE '2020-07-08', DATE '2020-06-20', '34AN008', 20, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (135, DATE '2023-12-17', DATE '2023-12-13', '06AN008', 57, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (136, DATE '2024-09-01', DATE '2024-08-29', '06AN014', 11, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (137, DATE '2023-01-30', DATE '2023-01-19', '10BL014', 75, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (138, DATE '2021-02-09', DATE '2021-01-25', '06AN001', 43, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (139, DATE '2024-06-08', DATE '2024-05-27', '34AV009', 67, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (140, DATE '2021-09-30', DATE '2021-09-12', '06ANK018', 59, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (141, DATE '2023-10-17', DATE '2023-09-30', '34AV010', 75, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (142, DATE '2020-10-31', DATE '2020-10-23', '06AN001', 6, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (143, DATE '2024-11-08', DATE '2024-10-20', '06AN013', 41, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (144, DATE '2024-09-04', DATE '2024-08-24', '72BT005', 52, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (145, DATE '2024-10-30', DATE '2024-10-27', '10BAL020', 18, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (146, DATE '2025-01-30', DATE '2025-01-24', '10BL008', 71, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (147, DATE '2019-12-28', DATE '2019-12-14', '34AV013', 7, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (148, DATE '2020-05-17', DATE '2020-05-05', '34AV013', 28, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (149, DATE '2021-11-15', DATE '2021-10-27', '34AV016', 51, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (150, DATE '2021-05-18', DATE '2021-05-06', '10BL011', 40, 'Evet');
+/* Current Rents ( Günün 13 Mayıs Olduğu Varsayımı Üzerine )*/
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (151, DATE '2025-05-23', DATE '2025-05-12', '10BL003', 1, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (152, DATE '2025-05-19', DATE '2025-05-11', '10BL006', 5, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (153, DATE '2025-05-17', DATE '2025-05-09', '10BL015', 3, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (154, DATE '2025-05-15', DATE '2025-05-12', '10BAL016', 7, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (155, DATE '2025-05-18', DATE '2025-05-01', '10BAL017', 15, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (156, DATE '2025-05-14', DATE '2025-05-09', '10BAL019', 60, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (157, DATE '2025-05-15', DATE '2025-05-05', '34AV002', 7, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (158, DATE '2025-05-19', DATE '2025-05-12', '34AV006', 8, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (159, DATE '2025-05-22', DATE '2025-05-12', '34AV011', 69, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (160, DATE '2025-05-23', DATE '2025-05-11', '34AV015', 55, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (161, DATE '2025-05-15', DATE '2025-05-09', '34AV017', 41, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (162, DATE '2025-05-14', DATE '2025-05-09', '34AV020', 12, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (163, DATE '2025-04-15', DATE '2025-05-02', '34AN003', 13, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (164, DATE '2025-05-18', DATE '2025-05-09', '34AN006', 46, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (165, DATE '2025-05-15', DATE '2025-05-03', '34AN011', 15, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (166, DATE '2025-05-20', DATE '2025-05-12', '34AN015', 43, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (167, DATE '2025-05-21', DATE '2025-05-11', '34AN017', 17, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (168, DATE '2025-05-24', DATE '2025-05-10', '34AN020', 72, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (169, DATE '2025-05-22', DATE '2025-05-12', '06AN003', 19, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (170, DATE '2025-05-14', DATE '2025-05-05', '06AN006', 29, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (171, DATE '2025-05-16', DATE '2025-05-08', '06AN011', 61, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (172, DATE '2025-05-18', DATE '2025-05-07', '06AN015', 22, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (173, DATE '2025-05-17', DATE '2025-05-12', '06ANK017', 62, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (174, DATE '2025-05-15', DATE '2025-05-09', '06ANK019', 24, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (175, DATE '2025-05-20', DATE '2025-05-09', '72BT003', 55, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (176, DATE '2025-05-23', DATE '2025-05-10', '72BT006', 77, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (177, DATE '2025-05-25', DATE '2025-05-12', '72BT011', 75, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (178, DATE '2025-05-22', DATE '2025-05-09', '72BT015', 22, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (179, DATE '2025-05-14', DATE '2025-05-07', '72BAT017', 54, 'Evet');
+INSERT INTO RENT (r_id, r_eDate, r_sDate, car_lno, cust_id, r_confirm)
+VALUES (180, DATE '2025-05-16', DATE '2025-05-09', '72BAT019', 78, 'Evet');
